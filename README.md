@@ -9,6 +9,13 @@ INSTALLATION
 
 Just place the SIM900Client folder inside your Arduino library folder and restart Arduino.
 
+FEATURES
+========
+
+1. One file. This library is very portable and leightweight.
+2. Arduino Client interface compatible. Can be used with HttpClient.
+3. Uses software flow control for data transport.
+
 USAGE
 =====
 
