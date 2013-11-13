@@ -14,43 +14,43 @@ USAGE
 
 1. Include the SoftwareSerial library as well as the SIM900Client library in your arduino sketch.
 
-    #include <SoftwareSerial.h>
-    #include <SIM900Client.h>
+        #include <SoftwareSerial.h>
+        #include <SIM900Client.h>
 
 2. Create a global instance variable. Parameters are the receive pin, send pin and power pin respectively. Make sure that pins are correct. This library will only work with software serial. In the future, I may extend with hardware serial support.
 
-    SIM900Client client(7, 8, 9);
+        SIM900Client client(7, 8, 9);
 
 3. Set up the GPRS module. Make sure that the baud rate matches the GPRS module's. If autobaud is activated, there will be no problems.
 
-    client.begin(9600);
+        client.begin(9600);
 
 4. Prevent errors by freezing when there's an error.
 
-    if (!client) {
-        Serial.println(F("SIM900 could not be initialized. Check power and baud rate."));
-        for (;;);
-    }
+        if (!client) {
+            Serial.println(F("SIM900 could not be initialized. Check power and baud rate."));
+            for (;;);
+        }
 
 5. Attach GPRS. Parameters are APN, username and password respectively.
 
-    if (!client.attach("m2mdata", "", "")) {
-        Serial.println(F("Could not attach GPRS."));
-        for (;;);
-    }
+        if (!client.attach("m2mdata", "", "")) {
+            Serial.println(F("Could not attach GPRS."));
+            for (;;);
+        }
 
 6. You can now start making tcp connections. Don't forget to call stop() after every connection.
 
-    client.connect("arduino.cc", 80);
-    client.println("GET /asciilogo.txt HTTP/1.0");
-    client.println("Host: arduino.cc");
-    client.println();
-    client.flush();
-    while (client.connected()) {
-        if (client.available())
-            Serial.print((char)client.read());
-    }
-    client.stop();
+        client.connect("arduino.cc", 80);
+        client.println("GET /asciilogo.txt HTTP/1.0");
+        client.println("Host: arduino.cc");
+        client.println();
+        client.flush();
+        while (client.connected()) {
+            if (client.available())
+                Serial.print((char)client.read());
+        }
+        client.stop();
 
 KNOWN ISSUES
 ============
