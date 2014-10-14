@@ -65,6 +65,9 @@ public:
     virtual uint8_t connected();
     virtual void flush();
     virtual void stop();
+    virtual int getIMEI(uint8_t *buf, size_t size);
+    virtual int setupClock();
+    virtual int getClock(uint8_t *buf, size_t size);
 
     virtual operator bool();
 
@@ -74,6 +77,19 @@ protected:
     uint8_t recvExpected(const __FlashStringHelper*, uint16_t);
     size_t fillBuffer();
     uint8_t detectClosed();
+    uint8_t sendQuery(const __FlashStringHelper *cmd,
+	    const __FlashStringHelper *exp1,
+	    const __FlashStringHelper *exp2,
+	    uint8_t *buf,
+	    size_t size,
+	    uint16_t timeout,
+	    uint8_t tries,
+	    uint16_t failDelay = 0);
+    uint8_t recvQuery(const __FlashStringHelper* exp1,
+	    const __FlashStringHelper* exp2,
+	    uint8_t *buf,
+	    size_t size,
+	    uint16_t timeout);
 
 private:
     // serial connection to sim900 gprs

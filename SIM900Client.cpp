@@ -459,3 +459,127 @@ uint8_t SIM900Client::detectClosed()
     }
     return 0;
 }
+
+uint8_t SIM900Client::sendQuery(const __FlashStringHelper* cmd,
+	const __FlashStringHelper* exp1,
+	const __FlashStringHelper* exp2,
+	uint8_t *buf,
+	size_t size,
+	uint16_t timeout,
+	uint8_t tries,
+	uint16_t failDelay)
+{
+    uint8_t res;
+    do {
+	voidReadBuffer();
+	_modem.println(cmd);
+	_modem.flush();
+	res = recvQuery(exp1, exp2, buf, size, timeout);
+	if (res != _S900_RECV_OK)
+	    delay(failDelay);
+    } while ((res != _S900_RECV_OK) && (--tries > 0));
+    return res;
+}
+
+uint8_t SIM900Client::recvQuery(const __FlashStringHelper* exp1,
+	const __FlashStringHelper* exp2,
+	uint8_t *buf,
+	size_t size,
+	uint16_t timeout)
+{
+    uint8_t ret = _S900_RECV_RETURN;
+    unsigned long start;
+    const char PROGMEM *ptr = (const char PROGMEM*)exp1;
+    char c = pgm_read_byte(ptr), r;
+    int i = 0;
+    bool first = true;
+
+    if (size == 0)
+	return 0;
+
+    while ((ret != _S900_RECV_OK) && (ret != _S900_RECV_INVALID)) {
+	start = millis();
+	while ((!_modem.available()) && (millis()-start < timeout));
+	if (!_modem.available())
+	    return _S900_RECV_TIMEOUT;
+
+	r = _modem.read();
+	switch (ret) {
+	    case _S900_RECV_RETURN:
+		if (r == '\n') {
+		    if (first && c == 0) {
+			ret = _S900_RECV_READ;
+		    }
+		    else
+		    ret = _S900_RECV_READING;
+		}
+		else if (r != '\r')
+		    ret = _S900_RECV_ECHO;
+		break;
+	    case _S900_RECV_ECHO:
+		if (r == '\n')
+		    ret = _S900_RECV_RETURN;
+		break;
+	    case _S900_RECV_READING:
+		if (r == c) {
+		    c = pgm_read_byte(++ptr);
+		    if (c == 0) {
+			ret = _S900_RECV_READ;
+		    }
+		} else {
+		    ret = _S900_RECV_NO_MATCH;
+		}
+		break;
+	    case _S900_RECV_READ:
+		if (first) {
+		    if (r == '\n' || r == '\r' || i >= size)
+		    {
+			first = false;
+			ptr = (const char PROGMEM*)exp2;
+			c = pgm_read_byte(ptr);
+			buf[i] = 0x00;
+			ret = _S900_RECV_ECHO;
+		    }
+		    else
+			buf[i++] = r;
+		}
+		else if (r == '\n') {
+		    ret = _S900_RECV_OK;
+		}
+		break;
+	    case _S900_RECV_NO_MATCH:
+		if (r == '\n')
+		    ret = _S900_RECV_INVALID;
+		break;
+	}
+    }
+    return ret;
+}
+
+int SIM900Client::getIMEI(uint8_t *buf, size_t size)
+{
+    if(!(_state == STATE_SETUP || _state == STATE_IDLE))
+	return 0;
+    if (sendQuery(F("AT+GSN"), F(""), F("OK"), buf, size, 1000, 3, 5000) != _S900_RECV_OK)
+	return 0;
+    return 1;
+}
+
+int SIM900Client::setupClock()
+{
+    if(!(_state == STATE_SETUP || _state == STATE_IDLE))
+	return 0;
+    if (sendAndAssert(F("AT+CLTS=1"), F("OK"), 1000, 3, 5000) != _S900_RECV_OK)
+	return 0;
+    return 1;
+}
+
+int SIM900Client::getClock(uint8_t *buf, size_t size)
+{
+    if(!(_state == STATE_SETUP || _state == STATE_IDLE))
+	return 0;
+
+    if (sendQuery(F("AT+CCLK?"), F("+CCLK: "), F("OK"), buf, size, 1000, 3, 5000) != _S900_RECV_OK)
+	return 0;
+    return 1;
+}
