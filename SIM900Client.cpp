@@ -43,7 +43,6 @@ SIM900Client::SIM900Client(uint8_t receivePin, uint8_t transmitPin, uint8_t powe
     // set power pin to output to be able to set LOW and HIGH
     pinMode(powerPin, OUTPUT);
     _bufindex = _buflen = 0;
-    _flowctrl = 1;
 }
 
 void SIM900Client::begin(int speed)
@@ -82,10 +81,6 @@ void SIM900Client::begin(int speed)
 
     // factory settings
     if (sendAndAssert(F("AT&F"), F("OK"), 1000, 3) != _S900_RECV_OK)
-        return;
-
-    // flow control
-    if (sendAndAssert(F("AT+IFC=1,1"), F("OK"), 1000, 3) != _S900_RECV_OK)
         return;
 
     _state = STATE_SETUP;
@@ -242,11 +237,6 @@ void SIM900Client::flush()
 
 void SIM900Client::stop()
 {
-    if (_flowctrl == 0) {
-        _flowctrl = 1;
-        _modem.write(0x11);//XON
-        _modem.flush();
-    }
     if (_state == STATE_CONNECTED) {
         do {
             _buflen = 0;
@@ -259,7 +249,6 @@ void SIM900Client::stop()
         }
     }
     _buflen = _bufindex = 0;
-    _flowctrl = 1;
     _state = STATE_IDLE;
 }
 
@@ -394,17 +383,9 @@ size_t SIM900Client::fillBuffer()
 
     while (_buflen < _S900_READ_BUFFER_SIZE) {
         if (_modem.available() > _SS_MAX_RX_BUFF-16) {
-            if (_buflen+8 == _S900_READ_BUFFER_SIZE) {
-                _modem.write(0x13);
-                _modem.flush();
-                _flowctrl = 0;
-            }
+	    // if buffer almost full then XOFF
         } else if (_modem.available() < 8) {
-            if (_flowctrl == 0) {
-                _flowctrl = 1;
-                _modem.write(0x11);//XON
-                _modem.flush();
-            }
+	    // if XOFF then XON
 
             start = millis();
             while ((!_modem.available()) && (millis() - start < 50));

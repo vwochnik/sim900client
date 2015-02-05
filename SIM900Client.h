@@ -98,8 +98,6 @@ private:
     uint8_t _pwrPin;
     // class state variable
     uint8_t _state;
-    // software flow control state
-    uint8_t _flowctrl;
     // circular buffer
     uint8_t _buf[_S900_READ_BUFFER_SIZE];
     // buffer index and length
