@@ -68,6 +68,7 @@ public:
     virtual int getIMEI(uint8_t *buf, size_t size);
     virtual int setupClock();
     virtual int getClock(uint8_t *buf, size_t size);
+    virtual int getSignalQuality(uint8_t *buf, size_t size);
 
     virtual operator bool();
 
