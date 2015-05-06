@@ -70,18 +70,21 @@ void SIM900Client::begin(int speed)
     // baud rate setting
     tries = 3;
     do {
+	voidReadBuffer();
         _modem.print(F("AT+IPR="));
         _modem.println(speed);
         _modem.flush();
         res = recvExpected(F("OK"), 1000);
     } while ((res != _S900_RECV_OK) && (--tries > 0));
 
-    if (res != _S900_RECV_OK)
+    if (res != _S900_RECV_OK) {
         return;
+    }
 
     // factory settings
-    if (sendAndAssert(F("AT&F"), F("OK"), 1000, 3) != _S900_RECV_OK)
+    if (sendAndAssert(F("AT&F"), F("OK"), 1000, 3) != _S900_RECV_OK) {
         return;
+    }
 
     _state = STATE_SETUP;
 }
@@ -124,22 +127,22 @@ uint8_t SIM900Client::attach(const char *apn, const char *user, const char *pass
     uint8_t tries, res;
 
     if (_state != STATE_SETUP)
-        return ERR_CMD_STATE;
+        return ERR_CMD_STATE << 4;
 
     if (res = sendAndAssert(F("AT+CPIN?"), F("+CPIN: READY"), 1000, 3, 2000)) {
-	return (ERR_AT_CPIN << 4) & res;
+	return (ERR_AT_CPIN << 4) | res;
     }
 
     if (res = sendAndAssert(F("AT+CIPSHUT"), F("SHUT OK"), 1000, 3)) {
-        return (ERR_AT_CIPSHUT << 4) & res;
+        return (ERR_AT_CIPSHUT << 4) | res;
     }
 
     if (res = sendAndAssert(F("AT+CIPMODE=1"), F("OK"), 1000, 3, 5000)) {
-        return (ERR_AT_CIPMODE << 4) & res;
+        return (ERR_AT_CIPMODE << 4) | res;
     }
 
     if (res = sendAndAssert(F("AT+CGATT=1"), F("OK"), 1000, 3, 5000)) {
-        return (ERR_AT_CGATT << 4) & res;
+        return (ERR_AT_CGATT << 4) | res;
     }
 
     tries = 3;
@@ -158,16 +161,16 @@ uint8_t SIM900Client::attach(const char *apn, const char *user, const char *pass
     } while (res && (--tries > 0));
 
     if (res) {
-        return (ERR_AT_CSTT << 4) & res;
+        return (ERR_AT_CSTT << 4) | res;
     }
 
     if (res = sendAndAssert(F("AT+CIICR"), F("OK"), 2000, 3, 5000)) {
-        return (ERR_AT_CIICR << 4) & res;
+        return (ERR_AT_CIICR << 4) | res;
     }
 
     delay(1000);
-    if (res = sendAndAssert(F("AT+CIFSR"), F("ERROR"), 1000, 3)) {
-        return (ERR_AT_CIFSR << 4) & res;
+    if (!(res = sendAndAssert(F("AT+CIFSR"), F("ERROR"), 1000, 3))) {
+        return (ERR_AT_CIFSR << 4) | res;
     }
 
     _state = STATE_IDLE;
@@ -340,6 +343,7 @@ uint8_t SIM900Client::sendAndAssert(const __FlashStringHelper* cmd, const __Flas
         if (res != _S900_RECV_OK)
             delay(failDelay);
     } while ((res != _S900_RECV_OK) && (--tries > 0));
+    return res;
 }
 
 uint8_t SIM900Client::recvExpected(const __FlashStringHelper *exp, uint16_t timeout)
@@ -559,7 +563,7 @@ uint8_t SIM900Client::recvQuery(const __FlashStringHelper* exp1,
 int SIM900Client::getIMEI(uint8_t *buf, size_t size)
 {
     if(!(_state == STATE_SETUP || _state == STATE_IDLE))
-	return ERR_CMD_STATE;
+	return ERR_CMD_STATE << 4;
     int resp = sendQuery(F("AT+GSN"), F(""), F("OK"), buf, size, 1000, 3, 5000);
     return resp;
 }
@@ -567,7 +571,7 @@ int SIM900Client::getIMEI(uint8_t *buf, size_t size)
 int SIM900Client::setupClock()
 {
     if(!(_state == STATE_SETUP || _state == STATE_IDLE))
-	return ERR_CMD_STATE;
+	return ERR_CMD_STATE << 4;
     int resp = sendAndAssert(F("AT+CLTS=1"), F("OK"), 1000, 3, 5000);
     return resp;
 }
@@ -575,7 +579,7 @@ int SIM900Client::setupClock()
 int SIM900Client::getClock(uint8_t *buf, size_t size)
 {
     if(!(_state == STATE_SETUP || _state == STATE_IDLE))
-	return ERR_CMD_STATE;
+	return ERR_CMD_STATE << 4;
 
     int resp = sendQuery(F("AT+CCLK?"), F("+CCLK: "), F("OK"), buf, size, 1000, 3, 5000);
     return resp;
@@ -584,7 +588,7 @@ int SIM900Client::getClock(uint8_t *buf, size_t size)
 int SIM900Client::getSignalQuality(uint8_t *buf, size_t size)
 {
     if(!(_state == STATE_SETUP || _state == STATE_IDLE))
-	return ERR_CMD_STATE;
+	return ERR_CMD_STATE << 4;
 
     int resp = sendQuery(F("AT+CSQ"), F("+CSQ:"), F("OK"), buf, size, 1000, 3, 5000);
     return resp;
