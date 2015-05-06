@@ -267,7 +267,7 @@ void SIM900Client::stop()
             delay(1000);
             _modem.print(F("+++"));
             delay(500);
-            sendAndAssert(F("AT+CIPCLOSE"), F("OK"), 1000, 3);
+            sendAndAssert(F("AT+CIPCLOSE"), F("CLOSE OK"), 1000, 3);
         }
     }
     _buflen = _bufindex = 0;
@@ -318,6 +318,7 @@ int SIM900Client::peek()
 
 uint8_t SIM900Client::connected()
 {
+    fillBuffer();
     return ((_state >= STATE_CONNECTED) && (_state < STATE_EOT));
 }
 
