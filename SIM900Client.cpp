@@ -277,19 +277,19 @@ void SIM900Client::stop()
 int SIM900Client::available()
 {
     if ((_state < STATE_CONNECTED) || (_state == STATE_EOT))
-        return -1;
+        return 0;
     if (_buflen < 10)
         fillBuffer();
         return _buflen;
 }
 
-int SIM900Client::read() { 
+int SIM900Client::read() {
     int p = peek();
     if (p < 0)
         return p;
 
     --_buflen;
-    return p; 
+    return p;
 }
 
 int SIM900Client::read(uint8_t *buf, size_t size)
@@ -313,7 +313,7 @@ int SIM900Client::peek()
     if (i >= _S900_READ_BUFFER_SIZE)
         i -= _S900_READ_BUFFER_SIZE;
 
-    return _buf[i]; 
+    return _buf[i];
 }
 
 uint8_t SIM900Client::connected()
