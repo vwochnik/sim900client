@@ -1,23 +1,18 @@
-SIM900Client
-============
+# SIM900Client library
 
-An Arduino Client implementation for the SIM900 GPRS module
+> An Arduino Client implementation for the SIM900 GPRS module
 
-
-INSTALLATION
-============
+## Installation
 
 Just place the SIM900Client folder inside your Arduino library folder and restart Arduino.
 
-FEATURES
-========
+## Features
 
 1. One file. This library is very portable and leightweight.
 2. Arduino Client interface compatible. Can be used with HttpClient.
 3. Uses software flow control for data transport.
 
-USAGE
-=====
+## Usage
 
 1. Include the SoftwareSerial library as well as the SIM900Client library in your arduino sketch.
 
@@ -59,14 +54,12 @@ USAGE
         }
         client.stop();
 
-KNOWN ISSUES
-============
+## Known Issues
 
 1. You cannot pause and then print +++ to the client. This will end transparent mode.
 2. You cannot write anything while not connected. This will send the data to the GPRS modem directly.
 3. A HTTP response containing \r\nCLOSED\r\n will void the connection.
 
-FURTHER QUESTIONS
-=================
+## Further Questions
 
-You can always contact me at v.wochnik@gmail.com if you have any further questions, bug reports or feature requests.
+Please create an issue if you have any questions or want to report a bug.
